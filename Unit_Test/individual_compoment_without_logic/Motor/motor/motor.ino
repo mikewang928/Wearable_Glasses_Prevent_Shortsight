@@ -1,6 +1,7 @@
 /*
     Vibration Motor with Arduino
     For more details, visit: https://techzeero.com/arduino-tutorials/vibration-motor-with-arduino/
+    This is written by TianAo NOT MIKE!!!!s
 */
 
 int motorPin = 3; //motor transistor is connected to pin 3
