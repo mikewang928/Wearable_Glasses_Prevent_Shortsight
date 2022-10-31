@@ -232,7 +232,7 @@ finally:
     
     df = pd.DataFrame(distancelist, columns = ['time', 'distance'])
     print(df)
-    st.table(df)
+    st.line_chart(df)
 
     print(f"Standard deviation of rawdata: {df['distance'].std()}")
     print(f"Standard deviation of filtered data: {dfcompare2['distance'].std()}")
