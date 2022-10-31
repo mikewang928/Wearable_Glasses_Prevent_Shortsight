@@ -49,7 +49,7 @@ async def run():
                     await asyncio.sleep(0.5) 
                     data = await client.read_gatt_char(Ultrasound_UUID)
                     rawdata = int.from_bytes(data, byteorder='little')
-                    datafilter(rawdata,7)
+                    datafilter(rawdata,7,False)
                     
     if not found:
         print('Could not find Arduino Nano 33 BLE Peripheral')
