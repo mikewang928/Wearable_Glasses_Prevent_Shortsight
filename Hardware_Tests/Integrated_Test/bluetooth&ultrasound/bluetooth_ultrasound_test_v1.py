@@ -2,10 +2,8 @@
 
 import asyncio
 import datetime
-from dis import dis
 from importlib.resources import path
-from time import time
-from turtle import distance
+
 
 from bleak import BleakClient
 from bleak import BleakScanner
@@ -51,20 +49,83 @@ async def run():
                     await asyncio.sleep(0.5) 
                     data = await client.read_gatt_char(Ultrasound_UUID)
                     rawdata = int.from_bytes(data, byteorder='little')
-                    datafilter(rawdata,5,1)
+                    datafilter(rawdata,7)
                     
     if not found:
         print('Could not find Arduino Nano 33 BLE Peripheral')
 
-def datafilter(rawdata,filter_1_value,filter_2_value = False):
-    timecompare = datetime.datetime.now().strftime("%H:%M:%S")
-    distancecompare.append([timecompare,rawdata])
-    if filter_2_value != False:
-        if 0 <= filter_2_value <= 2:
-            filter_2_value = 3
+def datafilter(rawdata,filter_1_value = False,filter_2_value = False):
+    rowdatatime = datetime.datetime.now().strftime("%H:%M:%S")
+    distancecompare.append([rowdatatime,rawdata])
+    if filter_1_value == False:
+        #print('You are getting data without filtering')
+        print(f'{rowdatatime}: {rawdata} cm')
+        distancelist.append([rowdatatime,rawdata])
+    elif 0 <= filter_1_value <= 2:
+        #print ('The first filter value should be bigger than 2. You are getting data with a filter value of 3')
+        filter_1_value = 3
+
+        if filter_2_value != False:
+            if 0 <= filter_2_value <= 2:
+                filter_2_value = 3
+                if len(distancebuffer) < filter_1_value:
+                    distancebuffer.append(rawdata)
+                                
+                else:
+                    distancebuffer.pop(0)
+                    distancebuffer.append(rawdata)
+                    distancebuffer.sort()
+                    distancebuffer.pop(0)
+                    distancebuffer.pop(-1)
+                    filterdata = sum(distancebuffer)/len(distancebuffer)
+                    timecompare2 = datetime.datetime.now().strftime("%H:%M:%S")
+                    #print(f'{time}: {filterdata} cm')
+                    distancecompare2.append([timecompare2,filterdata])
+                                    
+                    
+                    if len(distancebuffer2) < filter_2_value:
+                        distancebuffer2.append(filterdata)
+                    else:
+                        distancebuffer2.pop(0)
+                        distancebuffer2.append(filterdata)
+                        distancebuffer2.sort()
+                        distancebuffer2.pop(0)
+                        distancebuffer2.pop(-1)
+                        finaldata = sum(distancebuffer2)/len(distancebuffer2)
+                        time = datetime.datetime.now().strftime("%H:%M:%S")
+                        print(f'{timecompare2}: {finaldata} cm')
+                        distancelist.append([time,finaldata])  
+            else:  
+                if len(distancebuffer) < filter_1_value:
+                    distancebuffer.append(rawdata)
+                                
+                else:
+                    distancebuffer.pop(0)
+                    distancebuffer.append(rawdata)
+                    distancebuffer.sort()
+                    distancebuffer.pop(0)
+                    distancebuffer.pop(-1)
+                    filterdata = sum(distancebuffer)/len(distancebuffer)
+                    timecompare2 = datetime.datetime.now().strftime("%H:%M:%S")
+                    #print(f'{time}: {filterdata} cm')
+                    distancecompare2.append([timecompare2,filterdata])
+                                    
+                    
+                    if len(distancebuffer2) < filter_2_value:
+                        distancebuffer2.append(filterdata)
+                    else:
+                        distancebuffer2.pop(0)
+                        distancebuffer2.append(filterdata)
+                        distancebuffer2.sort()
+                        distancebuffer2.pop(0)
+                        distancebuffer2.pop(-1)
+                        finaldata = sum(distancebuffer2)/len(distancebuffer2)
+                        time = datetime.datetime.now().strftime("%H:%M:%S")
+                        print(f'{timecompare2}: {finaldata} cm')
+                        distancelist.append([time,finaldata])  
+        elif filter_2_value == False:
             if len(distancebuffer) < filter_1_value:
-                distancebuffer.append(rawdata)
-                            
+                distancebuffer.append(rawdata)                      
             else:
                 distancebuffer.pop(0)
                 distancebuffer.append(rawdata)
@@ -75,65 +136,85 @@ def datafilter(rawdata,filter_1_value,filter_2_value = False):
                 timecompare2 = datetime.datetime.now().strftime("%H:%M:%S")
                 #print(f'{time}: {filterdata} cm')
                 distancecompare2.append([timecompare2,filterdata])
+                time = datetime.datetime.now().strftime("%H:%M:%S")
+                print(f'{timecompare2}: {filterdata} cm')
+                distancelist.append([time,filterdata])
+    elif filter_1_value > 2:
+        if filter_2_value != False:
+            if 0 <= filter_2_value <= 2:
+                filter_2_value = 3
+                if len(distancebuffer) < filter_1_value:
+                    distancebuffer.append(rawdata)
                                 
-                
-                if len(distancebuffer2) < filter_2_value:
-                    distancebuffer2.append(filterdata)
                 else:
-                    distancebuffer2.pop(0)
-                    distancebuffer2.append(filterdata)
-                    distancebuffer2.sort()
-                    distancebuffer2.pop(0)
-                    distancebuffer2.pop(-1)
-                    finaldata = sum(distancebuffer2)/len(distancebuffer2)
-                    time = datetime.datetime.now().strftime("%H:%M:%S")
-                    print(f'{timecompare2}: {finaldata} cm')
-                    distancelist.append([time,finaldata])  
-        else:  
-            if len(distancebuffer) < filter_1_value:
-                distancebuffer.append(rawdata)
-                            
-            else:
-                distancebuffer.pop(0)
-                distancebuffer.append(rawdata)
-                distancebuffer.sort()
-                distancebuffer.pop(0)
-                distancebuffer.pop(-1)
-                filterdata = sum(distancebuffer)/len(distancebuffer)
-                timecompare2 = datetime.datetime.now().strftime("%H:%M:%S")
-                #print(f'{time}: {filterdata} cm')
-                distancecompare2.append([timecompare2,filterdata])
+                    distancebuffer.pop(0)
+                    distancebuffer.append(rawdata)
+                    distancebuffer.sort()
+                    distancebuffer.pop(0)
+                    distancebuffer.pop(-1)
+                    filterdata = sum(distancebuffer)/len(distancebuffer)
+                    timecompare2 = datetime.datetime.now().strftime("%H:%M:%S")
+                    #print(f'{time}: {filterdata} cm')
+                    distancecompare2.append([timecompare2,filterdata])
+                                    
+                    
+                    if len(distancebuffer2) < filter_2_value:
+                        distancebuffer2.append(filterdata)
+                    else:
+                        distancebuffer2.pop(0)
+                        distancebuffer2.append(filterdata)
+                        distancebuffer2.sort()
+                        distancebuffer2.pop(0)
+                        distancebuffer2.pop(-1)
+                        finaldata = sum(distancebuffer2)/len(distancebuffer2)
+                        time = datetime.datetime.now().strftime("%H:%M:%S")
+                        print(f'{timecompare2}: {finaldata} cm')
+                        distancelist.append([time,finaldata])  
+            else:  
+                if len(distancebuffer) < filter_1_value:
+                    distancebuffer.append(rawdata)
                                 
-                
-                if len(distancebuffer2) < filter_2_value:
-                    distancebuffer2.append(filterdata)
                 else:
-                    distancebuffer2.pop(0)
-                    distancebuffer2.append(filterdata)
-                    distancebuffer2.sort()
-                    distancebuffer2.pop(0)
-                    distancebuffer2.pop(-1)
-                    finaldata = sum(distancebuffer2)/len(distancebuffer2)
-                    time = datetime.datetime.now().strftime("%H:%M:%S")
-                    print(f'{timecompare2}: {finaldata} cm')
-                    distancelist.append([time,finaldata])  
-    else:
-        if len(distancebuffer) < filter_1_value:
-            distancebuffer.append(rawdata)
-                        
+                    distancebuffer.pop(0)
+                    distancebuffer.append(rawdata)
+                    distancebuffer.sort()
+                    distancebuffer.pop(0)
+                    distancebuffer.pop(-1)
+                    filterdata = sum(distancebuffer)/len(distancebuffer)
+                    timecompare2 = datetime.datetime.now().strftime("%H:%M:%S")
+                    #print(f'{time}: {filterdata} cm')
+                    distancecompare2.append([timecompare2,filterdata])
+                                    
+                    
+                    if len(distancebuffer2) < filter_2_value:
+                        distancebuffer2.append(filterdata)
+                    else:
+                        distancebuffer2.pop(0)
+                        distancebuffer2.append(filterdata)
+                        distancebuffer2.sort()
+                        distancebuffer2.pop(0)
+                        distancebuffer2.pop(-1)
+                        finaldata = sum(distancebuffer2)/len(distancebuffer2)
+                        time = datetime.datetime.now().strftime("%H:%M:%S")
+                        print(f'{timecompare2}: {finaldata} cm')
+                        distancelist.append([time,finaldata])  
         else:
-            distancebuffer.pop(0)
-            distancebuffer.append(rawdata)
-            distancebuffer.sort()
-            distancebuffer.pop(0)
-            distancebuffer.pop(-1)
-            filterdata = sum(distancebuffer)/len(distancebuffer)
-            timecompare2 = datetime.datetime.now().strftime("%H:%M:%S")
-            #print(f'{time}: {filterdata} cm')
-            distancecompare2.append([timecompare2,filterdata])
-            time = datetime.datetime.now().strftime("%H:%M:%S")
-            print(f'{timecompare2}: {filterdata} cm')
-            distancelist.append([time,filterdata])
+            if len(distancebuffer) < filter_1_value:
+                distancebuffer.append(rawdata)
+                            
+            else:
+                distancebuffer.pop(0)
+                distancebuffer.append(rawdata)
+                distancebuffer.sort()
+                distancebuffer.pop(0)
+                distancebuffer.pop(-1)
+                filterdata = sum(distancebuffer)/len(distancebuffer)
+                timecompare2 = datetime.datetime.now().strftime("%H:%M:%S")
+                #print(f'{time}: {filterdata} cm')
+                distancecompare2.append([timecompare2,filterdata])
+                time = datetime.datetime.now().strftime("%H:%M:%S")
+                print(f'{timecompare2}: {filterdata} cm')
+                distancelist.append([time,filterdata])
 
 loop = asyncio.get_event_loop()
 try:
@@ -175,13 +256,11 @@ finally:
     ax2.set_xlabel('time')
     ax2.set_ylabel('distance')
 
-
     ax3.plot(df['time'], df['distance'])
     ax3.xaxis.set_major_locator(plt.MaxNLocator(5))
     ax3.set_title('final data')
     ax3.set_xlabel('time')
     ax3.set_ylabel('distance')
-
 
     plt.show()
     loop.close()
