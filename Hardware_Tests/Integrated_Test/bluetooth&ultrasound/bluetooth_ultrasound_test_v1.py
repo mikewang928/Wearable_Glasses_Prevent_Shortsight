@@ -108,7 +108,7 @@ finally:
     print(f"Standard deviation of final data: {dfcompare['distance'].std()}")
 
     #save dataframe into a csv file
-    path = r'E:/JHU/课程/Principles of Design of Biomedical Instrumentation/intelligent glass/bluetooth&ultrasound'
+    path = r'./'
     df.to_csv(path + '/distance.csv', index = False)
     
     #plot the dfcompare and dfcompare2 and final data
