@@ -4,7 +4,7 @@
     This is written by TianAo NOT MIKE!!!!s
 */
 
-int motorPin = 3; //motor transistor is connected to pin 3
+int motorPin = 2; //motor transistor is connected to pin 3
 
 void setup()
 {
