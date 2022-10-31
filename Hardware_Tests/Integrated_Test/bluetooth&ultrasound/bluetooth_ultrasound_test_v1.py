@@ -11,6 +11,8 @@ from bleak import BleakScanner
 import matplotlib.pyplot as plt
 import pandas as pd
 
+import streamlit as st
+
 # These values have been randomly generated - they must match between the Central and Peripheral devices
 # Any changes you make here must be suitably made in the Arduino program as well
 
@@ -230,6 +232,7 @@ finally:
     
     df = pd.DataFrame(distancelist, columns = ['time', 'distance'])
     print(df)
+    st.table(df)
 
     print(f"Standard deviation of rawdata: {df['distance'].std()}")
     print(f"Standard deviation of filtered data: {dfcompare2['distance'].std()}")
