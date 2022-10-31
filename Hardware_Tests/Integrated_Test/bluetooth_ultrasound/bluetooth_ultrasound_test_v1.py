@@ -3,6 +3,7 @@
 import asyncio
 import datetime
 from importlib.resources import path
+import os
 
 
 from bleak import BleakClient
@@ -11,7 +12,6 @@ from bleak import BleakScanner
 import matplotlib.pyplot as plt
 import pandas as pd
 
-import streamlit as st
 
 # These values have been randomly generated - they must match between the Central and Peripheral devices
 # Any changes you make here must be suitably made in the Arduino program as well
@@ -51,7 +51,7 @@ async def run():
                     await asyncio.sleep(0.5) 
                     data = await client.read_gatt_char(Ultrasound_UUID)
                     rawdata = int.from_bytes(data, byteorder='little')
-                    datafilter(rawdata,7,False)
+                    datafilter(rawdata,False,False)
                     
     if not found:
         print('Could not find Arduino Nano 33 BLE Peripheral')
@@ -232,7 +232,6 @@ finally:
     
     df = pd.DataFrame(distancelist, columns = ['time', 'distance'])
     print(df)
-    st.line_chart(df)
 
     print(f"Standard deviation of rawdata: {df['distance'].std()}")
     print(f"Standard deviation of filtered data: {dfcompare2['distance'].std()}")
@@ -266,6 +265,7 @@ finally:
     ax3.set_ylabel('distance')
 
     plt.show()
+    os.system('streamlit run D:/GitHub/Wearable_Glasses_Prevent_Shortsight/Hardware_Tests/Integrated_Test/bluetooth_ultrasound/plot.py')
     loop.close()
 
         
