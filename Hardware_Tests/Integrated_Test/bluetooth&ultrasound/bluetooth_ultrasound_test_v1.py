@@ -184,12 +184,6 @@ finally:
 
 
     plt.show()
-    '''
-    plt.plot(df['time'], df['distance'])
-    plt.xlabel('time')
-    plt.ylabel('distance')
-    plt.show()
-    '''
     loop.close()
 
         
