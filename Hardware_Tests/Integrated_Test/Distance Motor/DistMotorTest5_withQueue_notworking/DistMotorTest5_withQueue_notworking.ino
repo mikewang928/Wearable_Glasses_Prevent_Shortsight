@@ -1,4 +1,5 @@
 #include <Average.h>
+#include <queue>
 
 
 // Reserve space for 10 entries in the average bucket.
@@ -25,6 +26,11 @@ unsigned long enteringClose_Time = millis();
 unsigned long OfficalEnterClose_Time = millis();
 
 
+float average_window[10];
+
+std::queue<int> q;
+// float sum = 0;
+
 bool hasBeenVeryClose = 0;
 bool hasBeenClose = 0;
 bool hasBeenCloseLongTime = 0; 
@@ -36,6 +42,12 @@ long cm_US1 = 0;
 long cm_US2 = 0;
 long cm_IR = 0;
 long dist = 0;
+
+
+// initializing the queue
+for(m=0;m<10;m++){
+  q.push(m);
+}
 
 
 /*
@@ -89,8 +101,17 @@ long distCalculate(float US1, float US2, float IR1){
 detecting the distance from the IR1, US1, and US2 sensors
 */
 long distDetection(int US1_triggerPin, int US1_echoPin, int US2_triggerPin, int US2_echoPin, int IR1_Pin){
-  ave.push(30*pow(analogRead(IR1_Pin)*0.0048828125, -2));
-  cm_IR = ave.mean();
+  q.push(30*pow(analogRead(IR1_Pin)*0.0048828125, -2));
+  q.pop();
+  average_window = queue.ToArray();
+  float sum = 0; 
+  for(i = 0; i < 10; i++){
+    sum += average_window[i];
+  }
+  cm_IR = sum/10;
+    
+  // ave.push(30*pow(analogRead(IR1_Pin)*0.0048828125, -2));
+  // cm_IR = ave.mean();
   cm_US1 = (0.034 * readUltrasonicDistance(US1_triggerPin, US1_echoPin)) /2;
   cm_US2 = (0.034 * readUltrasonicDistance(US2_triggerPin, US2_echoPin)) /2;
   Serial.print("IR1=");

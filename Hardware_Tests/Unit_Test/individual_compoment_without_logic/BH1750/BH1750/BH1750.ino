@@ -1,12 +1,13 @@
 #include <Wire.h>
 #include <BH1750.h>
 
-int SDA = A4;
-int SCL = A5;
+// const uint8_t SDA = A4;
+// const uint8_t SCL = A5;
 BH1750 lightMeter;
 
 void setup(){
 
+  Serial.println("begin");
   Serial.begin(9600);
 
   // Initialize the I2C bus (BH1750 library doesn't do this automatically)
@@ -15,7 +16,7 @@ void setup(){
 
   lightMeter.begin();
   
-  Serial.println(F("BH1750 Test"));
+  Serial.println(("BH1750 Test"));
 }
 
 void loop() {
