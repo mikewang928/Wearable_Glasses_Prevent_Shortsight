@@ -1,4 +1,9 @@
 #include <Average.h>
+#include <Wire.h>
+#include <stdlib.h>
+
+
+
 
 
 // Reserve space for 10 entries in the average bucket.
@@ -6,7 +11,11 @@
 Average<float> ave(10);
 
 int motorPin = 2; //motor transistor is connected to pin 3
+const int buzzer = 9; //buzzer to arduino pin 9
+const int resistorpin1 = A0;
+const int resistorpin2 = A1;
 
+static unsigned long LIGHT_STATE_CHANGE_TIME = 10000;
 static unsigned long GOOD_CLOSE_BOUNDRY = 40;
 static unsigned long CLOSE_VERYCLOSE_BOUNDRY = 20;
 static unsigned long CHANGE_STATE_TIME = 10000; // 10 secs = 10000 miliseconds
@@ -16,6 +25,9 @@ static unsigned long MOTOR_VIB2VIBLOOP_TIME = 60000;  // 1 min = 60000 milisecon
 // static unsigned long MOTOR_ALERT2STATIC_TIME = 120000; // 1 min = 120000 miliseconds 
 static unsigned long MOTOR_ALERT2STATIC_TIME = 60000; // 1 min = 6000 miliseconds (FOR THE SAKE OF TESTING)
 static unsigned long MOTOR_VIB_TIME = 300; // 0.1 secs = 100 miliseconds
+unsigned long lastGoodLighting_Time = millis();
+unsigned long lastVeryDarkOrVeryBright_Time = millis();
+unsigned long lastDatlaLarge_Time = millis();
 unsigned long lastVeryClose_Time = millis();
 unsigned long lastClose_Time = millis();
 unsigned long lastCloseLongTime_Time = millis();
@@ -25,11 +37,21 @@ unsigned long enteringClose_Time = millis();
 unsigned long OfficalEnterClose_Time = millis();
 
 
+bool hasBeenDeltaTooLarge = 0;
 bool hasBeenVeryClose = 0;
 bool hasBeenClose = 0;
 bool hasBeenCloseLongTime = 0; 
 
+byte buff[2];
 
+int LDR_voltage1 = 0;
+int LDR_voltage2 = 0;
+int LDR_voltage = 0; 
+int BH1750address = 0x23; // was 0x23
+int BH1750address2 = 0x5C;
+int lightIntensityReading[2];
+int enviromentLightIntensity = 0;
+int deltaLightIntensity = 0;
 long inches = 0;
 long inches2 = 0;
 long cm_US1 = 0;
@@ -38,11 +60,103 @@ long cm_IR = 0;
 long dist = 0;
 
 
+
 /*
 *********************************************************************************************************
 *                                         Helper functions                                              *
 *********************************************************************************************************
 */
+
+/*
+#########################################################################################################
+#                                         BH1750 related functions                                      #
+#########################################################################################################
+*/
+int BH1750_Read(int address){
+ int i=0;
+ Wire.beginTransmission(address);
+ Wire.requestFrom(address, 2);
+ while(Wire.available())
+ {
+   buff[i] = Wire.read();
+   i++;
+ }
+ Wire.endTransmission();  
+ return i;
+}
+
+
+void BH1750_Init(int address){
+ Wire.beginTransmission(address);
+ Wire.write(0x10);
+ Wire.endTransmission();
+}
+
+
+uint16_t BH1750_Main(){
+  uint16_t value=0;
+  BH1750_Init(BH1750address);
+  // delay(200);
+  if(2==BH1750_Read(BH1750address)){
+    value=((buff[0]<<8)|buff[1])/1.2;
+    // Serial.print(value);
+    lightIntensityReading[0] = value;
+  }
+  delay(150);
+  BH1750_Init(BH1750address2);
+  if(2==BH1750_Read(BH1750address2)){
+    value=((buff[0]<<8)|buff[1])/1.2;
+    lightIntensityReading[1] = value;
+  }
+}
+
+
+
+
+/*
+#########################################################################################################
+#                                 light intensity related functions                                     #
+#########################################################################################################
+*/
+
+void tooDarkOrTooBright(){
+  if(millis() - lastGoodLighting_Time > LIGHT_STATE_CHANGE_TIME){
+    lastVeryDarkOrVeryBright_Time = millis();
+    Serial.println(" || entered tooDarkOrTooBright state!!");
+    buzzer_periodic();
+  }else{
+    Serial.println(" || entering tooDarkOrTooBright state waiting for threshold time!!");
+  }
+}
+
+
+void deltaTooLarge(){
+  if(millis() - lastGoodLighting_Time > LIGHT_STATE_CHANGE_TIME){
+    lastDatlaLarge_Time = millis();
+    Serial.println(" || entered deltaTooLarge state!!");
+    buzzer_constant();
+  }else{
+    Serial.println(" || entering deltaTooLarge state waiting for threshold time!!");
+  }
+}
+
+int duelLDR_findMin(int resistorpin1, int resistorpin2){
+  LDR_voltage1 = analogRead(resistorpin1);
+  LDR_voltage2 = analogRead(resistorpin2);
+  Serial.print("LDR1=");
+  Serial.print(LDR_voltage1);
+  Serial.print(" LDR2=");
+  Serial.print(LDR_voltage2);
+  if(LDR_voltage1 > LDR_voltage2){
+    LDR_voltage = LDR_voltage2;
+  }else{
+    LDR_voltage = LDR_voltage1;
+  }
+  Serial.print("LDR_all=");
+  Serial.println(LDR_voltage);
+}
+
+
 
 /*
 #########################################################################################################
@@ -106,6 +220,31 @@ long distDetection(int US1_triggerPin, int US1_echoPin, int US2_triggerPin, int 
 
   return cm_US1, cm_US2, cm_IR;
 }
+
+
+/*
+#########################################################################################################
+#                                         Buzzer State Functions                                        #
+#########################################################################################################
+*/
+void buzzer_constant(){
+  // noTone(buzzer);     // Stop sound...
+  tone(buzzer, 3000); // Send 1KHz sound signal...
+}
+
+void buzzer_mute(){
+  noTone(buzzer);
+}
+
+
+void buzzer_periodic(){
+  noTone(buzzer);
+  tone(buzzer, 3000);
+  delay(200);
+  noTone(buzzer);
+  delay(200);
+}
+
 
 
 /*
@@ -350,7 +489,10 @@ Basic Set up
 void setup(){
   Serial.begin(9600);
   pinMode(motorPin, OUTPUT);
-  // digitalWrite(motorPin, LOW);
+  pinMode(resistorpin1, INPUT);// put your setup code here, to run once:
+  pinMode(resistorpin2, INPUT);
+  delay(2000);
+  pinMode(buzzer, OUTPUT); // Set buzzer - pin 9 as an output
 
 }
  
@@ -363,36 +505,60 @@ Main Loop
 */
 
 void loop(){
-  // Add a new random value to the bucket
-  Serial.print("***");
-  Serial.print("hasBeenVeryClose=");
-  Serial.print(hasBeenVeryClose);
-  Serial.print("|");
-  Serial.print("hasBeenClose=");
-  Serial.print(hasBeenClose);
-  Serial.print("|");
-  Serial.print("hasBeenCloseLongTime=");
-  Serial.print(hasBeenCloseLongTime);
-  Serial.print("***");
-  cm_US1, cm_US2, cm_IR = distDetection(12,11,10,9,A0);
-  // Serial.print("cm");
-  dist = distCalculate(cm_US1, cm_US2, cm_IR);
-  Serial.print("calculated_dist=");
-  Serial.print(dist);
-  Serial.println("cm");
-  
-  // entering the very close state
-  if(dist < 10){
-    veryCloseLogic();
-  }
-  if(dist >10 &&  dist < 40 ){
-    closeLogic();
-  }
+  duelLDR_findMin(resistorpin1, resistorpin2);
+  if(LDR_voltage > 644){
+      BH1750_Main();
+      Serial.print("BH1750_1=");
+      Serial.print(lightIntensityReading[0]);
+      Serial.print(" lux");
+      Serial.print("; BH1750_2=");
+      Serial.print(lightIntensityReading[1]);
+      Serial.print(" lux");
+      enviromentLightIntensity = (lightIntensityReading[0] + lightIntensityReading[1])/2;
+      deltaLightIntensity = abs(lightIntensityReading[0] - lightIntensityReading[1]);
+      if(deltaLightIntensity>1000){
+        deltaTooLarge();
+      }else if(enviromentLightIntensity < 200 || enviromentLightIntensity > 1000 ){
+        tooDarkOrTooBright();
+      }else{
+        Serial.println(" || Light situation GOOD!!");
+        buzzer_mute();
+        lastGoodLighting_Time = millis();
+      }
+      // Add a new random value to the bucket
+      Serial.print("***");
+      Serial.print("hasBeenVeryClose=");
+      Serial.print(hasBeenVeryClose);
+      Serial.print("|");
+      Serial.print("hasBeenClose=");
+      Serial.print(hasBeenClose);
+      Serial.print("|");
+      Serial.print("hasBeenCloseLongTime=");
+      Serial.print(hasBeenCloseLongTime);
+      Serial.print("***");
+      cm_US1, cm_US2, cm_IR = distDetection(12,11,10,9,A0);
+      dist = distCalculate(cm_US1, cm_US2, cm_IR);
+      Serial.print("calculated_dist=");
+      Serial.print(dist);
+      Serial.println("cm");
+      
+      if(dist < 10){
+        veryCloseLogic();
+      }
+      if(dist >10 &&  dist < 40 ){
+        closeLogic();
+      }
 
-  if(dist > 40){
-    goodDistLogic();
-  }
-  // DistanceLogic(dist);
+      if(dist > 40){
+        goodDistLogic();
+      }
+
+  }else{
+      Serial.print("Device NOT PUT ON!!!!!"); 
+      buzzer_mute();
+      delay(100);      
+    }
+  
 
 
 }
